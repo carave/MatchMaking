@@ -18,6 +18,7 @@ function createBoard() {
             cell.classList.add("cell");
             cell.dataset.row = row;
             cell.dataset.col = col;
+            cell.dataset.value = "0"; // Initialiser la valeur à 0 pour représenter une case vide
             board.appendChild(cell);
         }
     }
@@ -33,7 +34,11 @@ function handleClick(event) {
         // Place le jeton dans la cellule correspondante
         const cellToPlace = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
         // Ajoutez ici la logique pour placer le jeton dans la cellule
-        cellToPlace.classList.add("red"); // Par exemple, ajoutez une classe pour indiquer la couleur du jeton (rouge)
+        const currentPlayerToken = (currentPlayer === "red") ? "1" : "2";
+        cellToPlace.dataset.value = currentPlayerToken;
+        cellToPlace.classList.add(currentPlayer); // Ajoute la classe correspondant à la couleur du joueur
+        // Change le joueur actif pour le prochain tour
+        currentPlayer = (currentPlayer === "red") ? "yellow" : "red";
     } else {
         // La colonne est pleine, faites quelque chose pour gérer ce cas
         console.log("La colonne est pleine !");
@@ -44,7 +49,7 @@ function handleClick(event) {
 function getLowestEmptyRow(col) {
     const cellsInColumn = document.querySelectorAll(`[data-col="${col}"]`);
     for (let i = cellsInColumn.length - 1; i >= 0; i--) {
-        if (!cellsInColumn[i].classList.contains("red") && !cellsInColumn[i].classList.contains("yellow")) {
+        if (cellsInColumn[i].dataset.value === "0") {
             return parseInt(cellsInColumn[i].dataset.row);
         }
     }
