@@ -26,7 +26,27 @@ function createBoard() {
 // Fonction pour détecter les clics sur les cellules du plateau
 function handleClick(event) {
     const cell = event.target;
-    const row = parseInt(cell.dataset.row);
     const col = parseInt(cell.dataset.col);
-    // Implementez ici la logique pour placer un jeton dans la colonne cliquée
+    const row = getLowestEmptyRow(col); // Obtient la ligne la plus basse vide dans la colonne
+
+    if (row !== -1) {
+        // Place le jeton dans la cellule correspondante
+        const cellToPlace = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        // Ajoutez ici la logique pour placer le jeton dans la cellule
+        cellToPlace.classList.add("red"); // Par exemple, ajoutez une classe pour indiquer la couleur du jeton (rouge)
+    } else {
+        // La colonne est pleine, faites quelque chose pour gérer ce cas
+        console.log("La colonne est pleine !");
+    }
+}
+
+// Fonction pour obtenir la ligne la plus basse vide dans une colonne donnée
+function getLowestEmptyRow(col) {
+    const cellsInColumn = document.querySelectorAll(`[data-col="${col}"]`);
+    for (let i = cellsInColumn.length - 1; i >= 0; i--) {
+        if (!cellsInColumn[i].classList.contains("red") && !cellsInColumn[i].classList.contains("yellow")) {
+            return parseInt(cellsInColumn[i].dataset.row);
+        }
+    }
+    return -1; // Retourne -1 si la colonne est pleine
 }
