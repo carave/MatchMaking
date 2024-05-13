@@ -55,3 +55,70 @@ function getLowestEmptyRow(col) {
     }
     return -1; // Retourne -1 si la colonne est pleine
 }
+
+// Fonction pour vérifier si un joueur a une rangée de 4 jetons alignés
+function checkWin(player) {
+    // Vérifier les lignes
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col <= COLS - 4; col++) {
+            if (
+                getCellValue(row, col) === player &&
+                getCellValue(row, col + 1) === player &&
+                getCellValue(row, col + 2) === player &&
+                getCellValue(row, col + 3) === player
+            ) {
+                return true;
+            }
+        }
+    }
+
+    // Vérifier les colonnes
+    for (let col = 0; col < COLS; col++) {
+        for (let row = 0; row <= ROWS - 4; row++) {
+            if (
+                getCellValue(row, col) === player &&
+                getCellValue(row + 1, col) === player &&
+                getCellValue(row + 2, col) === player &&
+                getCellValue(row + 3, col) === player
+            ) {
+                return true;
+            }
+        }
+    }
+
+    // Vérifier les diagonales (de gauche à droite)
+    for (let row = 0; row <= ROWS - 4; row++) {
+        for (let col = 0; col <= COLS - 4; col++) {
+            if (
+                getCellValue(row, col) === player &&
+                getCellValue(row + 1, col + 1) === player &&
+                getCellValue(row + 2, col + 2) === player &&
+                getCellValue(row + 3, col + 3) === player
+            ) {
+                return true;
+            }
+        }
+    }
+
+    // Vérifier les diagonales (de droite à gauche)
+    for (let row = 0; row <= ROWS - 4; row++) {
+        for (let col = COLS - 1; col >= 3; col--) {
+            if (
+                getCellValue(row, col) === player &&
+                getCellValue(row + 1, col - 1) === player &&
+                getCellValue(row + 2, col - 2) === player &&
+                getCellValue(row + 3, col - 3) === player
+            ) {
+                return true;
+            }
+        }
+    }
+
+    return false; // Aucune rangée de 4 jetons alignés n'a été trouvée
+}
+
+// Fonction pour obtenir la valeur d'une cellule dans le plateau de jeu
+function getCellValue(row, col) {
+    const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+    return cell ? parseInt(cell.dataset.value) : -1; // Retourne -1 si la cellule est hors limites
+}
