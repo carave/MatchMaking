@@ -11,7 +11,6 @@ document.addEventListener("DOMContentLoaded", function() {
     let currentPlayer;
     let turn = 1;
 
-    // Définir les couleurs pour les joueurs
     const playerColor = "red";
     const opponentColor = "yellow";
     let currentColor;
@@ -42,13 +41,13 @@ document.addEventListener("DOMContentLoaded", function() {
         const message = JSON.parse(event.data);
         console.log("Message from server:", message);
         if (message.type === "match_found") {
-            // Définir le joueur qui commence
             currentPlayer = message.Player;
             currentColor = (currentPlayer === player) ? playerColor : opponentColor;
+            turn = message.Turn;
             updateTurnInfo();
         }
         if (message.type === "move") {
-            handleMove(message.column, message.player);
+            handleMove(message.column, message.player, message.turn);
         }
     };
 
@@ -61,7 +60,8 @@ document.addEventListener("DOMContentLoaded", function() {
             const message = {
                 type: "move",
                 column: col,
-                player: player
+                player: player,
+                turn: turn
             };
             socket.send(JSON.stringify(message));
             currentPlayer = opponent;
@@ -81,11 +81,11 @@ document.addEventListener("DOMContentLoaded", function() {
         window.location.href = "lobby.html";
     });
 
-    function handleMove(column, player) {
+    function handleMove(column, movePlayer, moveTurn) {
         const row = getLowestEmptyRow(column);
         if (row !== -1) {
             const cellToPlace = document.querySelector(`[data-row="${row}"][data-col="${column}"]`);
-            const color = (player === player) ? playerColor : opponentColor;
+            const color = (movePlayer === player) ? playerColor : opponentColor;
             cellToPlace.dataset.value = (color === playerColor) ? "1" : "2";
             cellToPlace.classList.add(color);
 
@@ -96,9 +96,9 @@ document.addEventListener("DOMContentLoaded", function() {
                     showEndGamePopup(`Le joueur ${color} a gagné !`);
                 }, 100);
             } else {
-                currentPlayer = (color === playerColor) ? opponent : player;
-                currentColor = (color === playerColor) ? opponentColor : playerColor;
-                turn++;
+                currentPlayer = (movePlayer === player) ? opponent : player;
+                currentColor = (movePlayer === player) ? opponentColor : playerColor;
+                turn = moveTurn + 1;
                 updateTurnInfo();
             }
         } else {
@@ -108,7 +108,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function createBoard() {
         console.log("Creating game board");
-        // Vider le contenu du plateau avant de créer les cellules
         board.innerHTML = '';
         for (let row = 0; row < 6; row++) {
             for (let col = 0; col < 7; col++) {
@@ -116,7 +115,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 cell.classList.add("cell");
                 cell.dataset.row = row;
                 cell.dataset.col = col;
-                cell.dataset.value = "0"; // Initialiser la valeur à 0 pour représenter une case vide
+                cell.dataset.value = "0";
                 board.appendChild(cell);
             }
         }
@@ -131,7 +130,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 return parseInt(cellsInColumn[i].dataset.row);
             }
         }
-        return -1; // Retourne -1 si la colonne est pleine
+        return -1;
     }
 
     function updateTurnInfo() {

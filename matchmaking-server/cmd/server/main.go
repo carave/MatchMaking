@@ -13,7 +13,7 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return true // Permettre les requêtes de toutes les origines
+		return true
 	},
 }
 
@@ -24,10 +24,11 @@ var queue = []Player{}
 type Message struct {
 	Type     string `json:"type"`
 	Username string `json:"username,omitempty"`
-	Column   int    `json:"column,omitempty"` // Utilisé pour les messages de jeu
-	Count    int    `json:"count,omitempty"`  // Utilisé pour le nombre de joueurs dans la file d'attente
+	Column   int    `json:"column,omitempty"`
+	Count    int    `json:"count,omitempty"`
 	Player   string `json:"player,omitempty"`
 	Opponent string `json:"opponent,omitempty"`
+	Turn     int    `json:"turn,omitempty"`
 }
 
 type Player struct {
@@ -67,7 +68,6 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 func handleClientMessage(ws *websocket.Conn, msg Message) {
 	switch msg.Type {
 	case "join_queue":
-		// Vérifier si le joueur est déjà dans la file d'attente
 		for _, player := range queue {
 			if player.Conn == ws {
 				return
@@ -81,15 +81,14 @@ func handleClientMessage(ws *websocket.Conn, msg Message) {
 			player2 := queue[1]
 			queue = queue[2:]
 
-			// Choisir aléatoirement quel joueur commence
 			rand.Seed(time.Now().UnixNano())
 			startingPlayer := player1.Username
 			if rand.Intn(2) == 0 {
 				startingPlayer = player2.Username
 			}
 
-			player1.Conn.WriteJSON(Message{Type: "match_found", Opponent: player2.Username, Player: startingPlayer})
-			player2.Conn.WriteJSON(Message{Type: "match_found", Opponent: player1.Username, Player: startingPlayer})
+			player1.Conn.WriteJSON(Message{Type: "match_found", Opponent: player2.Username, Player: startingPlayer, Turn: 1})
+			player2.Conn.WriteJSON(Message{Type: "match_found", Opponent: player1.Username, Player: startingPlayer, Turn: 1})
 		}
 	case "leave_queue":
 		for i, player := range queue {
@@ -106,7 +105,6 @@ func handleClientMessage(ws *websocket.Conn, msg Message) {
 	}
 }
 
-// Nouvelle fonction pour notifier la taille de la file d'attente
 func notifyQueueSize() {
 	queueSizeMessage := Message{Type: "queue_size", Count: len(queue)}
 	for _, player := range queue {
