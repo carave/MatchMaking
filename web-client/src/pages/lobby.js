@@ -2,6 +2,13 @@ document.addEventListener("DOMContentLoaded", function() {
     const form = document.getElementById("lobby-form");
     const usernameInput = document.getElementById("username");
     const queueStatus = document.getElementById("queue-status");
+    const leaveButton = document.createElement("button");
+    leaveButton.id = "leave-button";
+    leaveButton.textContent = "Leave Queue";
+    leaveButton.style.display = "none"; // Initialement caché
+    document.body.appendChild(leaveButton);
+
+    let socket; // Déclaration de la variable socket en dehors des fonctions
 
     form.addEventListener("submit", function(event) {
         event.preventDefault();
@@ -12,11 +19,13 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     function joinQueue(username) {
-        const socket = new WebSocket("ws://localhost:8080/ws");
+        socket = new WebSocket("ws://localhost:8080/ws");
 
         socket.onopen = function(event) {
             socket.send(JSON.stringify({ type: "join_queue", username: username }));
             queueStatus.textContent = "Joining queue...";
+            form.style.display = "none"; // Cacher le formulaire de join queue
+            leaveButton.style.display = "block"; // Afficher le bouton leave queue
         };
 
         socket.onmessage = function(event) {
@@ -38,16 +47,16 @@ document.addEventListener("DOMContentLoaded", function() {
 
         socket.onclose = function(event) {
             queueStatus.textContent = "Disconnected from server.";
+            leaveButton.style.display = "none"; // Cacher le bouton leave queue
+            form.style.display = "block"; // Afficher le formulaire de join queue
         };
 
-        // Ajouter un bouton pour quitter la file d'attente
-        const leaveButton = document.createElement("button");
-        leaveButton.textContent = "Leave Queue";
         leaveButton.addEventListener("click", function() {
             socket.send(JSON.stringify({ type: "leave_queue", username: username }));
             queueStatus.textContent = "You have left the queue.";
+            leaveButton.style.display = "none"; // Cacher le bouton leave queue
+            form.style.display = "block"; // Afficher le formulaire de join queue
             socket.close();
         });
-        document.body.appendChild(leaveButton);
     }
 });

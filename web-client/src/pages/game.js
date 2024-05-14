@@ -5,9 +5,19 @@ document.addEventListener("DOMContentLoaded", function() {
 
     const board = document.getElementById("board");
     const messageDiv = document.getElementById("message");
+    const turnDiv = document.createElement("div");
     const resetButton = document.getElementById("reset-button");
     const leaveButton = document.getElementById("leave-button");
-    let currentPlayer = "red"; // Initialise le joueur actif (rouge)
+    let currentPlayer;
+    let turn = 1;
+
+    // Définir les couleurs pour les joueurs
+    const playerColor = "red";
+    const opponentColor = "yellow";
+    let currentColor;
+
+    turnDiv.id = "turn";
+    document.body.insertBefore(turnDiv, board);
 
     const game = new ConnectFour();
     const socket = new WebSocket("ws://localhost:8080/ws");
@@ -18,6 +28,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
     socket.onclose = function(event) {
         console.log("WebSocket is closed now.");
+        if (currentPlayer === player) {
+            alert("Your opponent has left the game. You win!");
+            showEndGamePopup("You win!");
+        }
     };
 
     socket.onerror = function(event) {
@@ -27,19 +41,33 @@ document.addEventListener("DOMContentLoaded", function() {
     socket.onmessage = function(event) {
         const message = JSON.parse(event.data);
         console.log("Message from server:", message);
-        handleMove(message.column, message.player);
+        if (message.type === "match_found") {
+            // Définir le joueur qui commence
+            currentPlayer = message.Player;
+            currentColor = (currentPlayer === player) ? playerColor : opponentColor;
+            updateTurnInfo();
+        }
+        if (message.type === "move") {
+            handleMove(message.column, message.player);
+        }
     };
 
     board.addEventListener("click", function(event) {
+        if (currentPlayer !== player) return;
+
         const cell = event.target;
         const col = parseInt(cell.dataset.col);
         if (game.makeMove(col)) {
             const message = {
+                type: "move",
                 column: col,
-                player: currentPlayer
+                player: player
             };
             socket.send(JSON.stringify(message));
-            currentPlayer = (currentPlayer === "red") ? "yellow" : "red";
+            currentPlayer = opponent;
+            currentColor = opponentColor;
+            turn++;
+            updateTurnInfo();
         }
     });
 
@@ -54,19 +82,24 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     function handleMove(column, player) {
-        const row = getLowestEmptyRow(column); // Obtient la ligne la plus basse vide dans la colonne
+        const row = getLowestEmptyRow(column);
         if (row !== -1) {
             const cellToPlace = document.querySelector(`[data-row="${row}"][data-col="${column}"]`);
-            cellToPlace.dataset.value = (player === "red") ? "1" : "2";
-            cellToPlace.classList.add(player);
+            const color = (player === player) ? playerColor : opponentColor;
+            cellToPlace.dataset.value = (color === playerColor) ? "1" : "2";
+            cellToPlace.classList.add(color);
 
-            if (game.checkWinner((player === "red") ? "1" : "2")) {
+            if (game.checkWinner((color === playerColor) ? "1" : "2")) {
                 setTimeout(() => {
-                    messageDiv.textContent = `Le joueur ${player} a gagné !`;
-                    console.log(`Le joueur ${player} a gagné !`);
-                    resetButton.style.display = "inline-block";
-                    leaveButton.style.display = "inline-block";
+                    messageDiv.textContent = `Le joueur ${color} a gagné !`;
+                    console.log(`Le joueur ${color} a gagné !`);
+                    showEndGamePopup(`Le joueur ${color} a gagné !`);
                 }, 100);
+            } else {
+                currentPlayer = (color === playerColor) ? opponent : player;
+                currentColor = (color === playerColor) ? opponentColor : playerColor;
+                turn++;
+                updateTurnInfo();
             }
         } else {
             alert("La colonne est pleine !");
@@ -75,6 +108,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function createBoard() {
         console.log("Creating game board");
+        // Vider le contenu du plateau avant de créer les cellules
+        board.innerHTML = '';
         for (let row = 0; row < 6; row++) {
             for (let col = 0; col < 7; col++) {
                 const cell = document.createElement("div");
@@ -99,13 +134,30 @@ document.addEventListener("DOMContentLoaded", function() {
         return -1; // Retourne -1 si la colonne est pleine
     }
 
-    function resetBoard() {
-        const cells = document.querySelectorAll(".cell");
-        cells.forEach(cell => {
-            cell.dataset.value = "0";
-            cell.classList.remove("red", "yellow");
+    function updateTurnInfo() {
+        turnDiv.textContent = `Turn ${turn}: ${currentPlayer}'s turn (${currentColor})`;
+    }
+
+    function showEndGamePopup(message) {
+        const popup = document.createElement("div");
+        popup.classList.add("popup");
+        const popupMessage = document.createElement("p");
+        popupMessage.textContent = message;
+        const requeueButton = document.createElement("button");
+        requeueButton.textContent = "Requeue";
+        requeueButton.addEventListener("click", function() {
+            socket.send(JSON.stringify({ type: "requeue", username: player }));
+            window.location.href = "lobby.html";
         });
-        currentPlayer = "red"; // Réinitialise le joueur actif
-        messageDiv.textContent = ""; // Efface le message de victoire
+        const leaveButton = document.createElement("button");
+        leaveButton.textContent = "Leave Game";
+        leaveButton.addEventListener("click", function() {
+            socket.send(JSON.stringify({ type: "leave_queue", username: player }));
+            window.location.href = "lobby.html";
+        });
+        popup.appendChild(popupMessage);
+        popup.appendChild(requeueButton);
+        popup.appendChild(leaveButton);
+        document.body.appendChild(popup);
     }
 });

@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -79,8 +81,15 @@ func handleClientMessage(ws *websocket.Conn, msg Message) {
 			player2 := queue[1]
 			queue = queue[2:]
 
-			player1.Conn.WriteJSON(Message{Type: "match_found", Opponent: player2.Username})
-			player2.Conn.WriteJSON(Message{Type: "match_found", Opponent: player1.Username})
+			// Choisir aléatoirement quel joueur commence
+			rand.Seed(time.Now().UnixNano())
+			startingPlayer := player1.Username
+			if rand.Intn(2) == 0 {
+				startingPlayer = player2.Username
+			}
+
+			player1.Conn.WriteJSON(Message{Type: "match_found", Opponent: player2.Username, Player: startingPlayer})
+			player2.Conn.WriteJSON(Message{Type: "match_found", Opponent: player1.Username, Player: startingPlayer})
 		}
 	case "leave_queue":
 		for i, player := range queue {
@@ -90,8 +99,10 @@ func handleClientMessage(ws *websocket.Conn, msg Message) {
 			}
 		}
 		notifyQueueSize()
-	default:
+	case "move":
 		broadcast <- msg
+	default:
+		log.Printf("Unhandled message type: %s", msg.Type)
 	}
 }
 
