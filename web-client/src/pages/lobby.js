@@ -21,6 +21,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
         socket.onmessage = function(event) {
             const message = JSON.parse(event.data);
+            if (message.type === "queue_size") {
+                queueStatus.textContent = `Number of players in queue: ${message.Column}`;
+            }
             if (message.type === "match_found") {
                 queueStatus.textContent = "Match found! Redirecting to game...";
                 setTimeout(() => {
@@ -36,5 +39,15 @@ document.addEventListener("DOMContentLoaded", function() {
         socket.onclose = function(event) {
             queueStatus.textContent = "Disconnected from server.";
         };
+
+        // Ajouter un bouton pour quitter la file d'attente
+        const leaveButton = document.createElement("button");
+        leaveButton.textContent = "Leave Queue";
+        leaveButton.addEventListener("click", function() {
+            socket.send(JSON.stringify({ type: "leave_queue", username: username }));
+            queueStatus.textContent = "You have left the queue.";
+            socket.close();
+        });
+        document.body.appendChild(leaveButton);
     }
 });
