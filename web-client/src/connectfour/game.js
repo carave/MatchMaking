@@ -13,6 +13,7 @@ class ConnectFour {
             if (this.board[i][column] === 0) {
                 this.board[i][column] = this.currentPlayer;
                 if (this.checkWinner(this.currentPlayer)) {
+                    console.log(`Player ${this.currentPlayer} wins!`);
                     return `${this.currentPlayer} wins`;
                 }
                 this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
@@ -23,10 +24,10 @@ class ConnectFour {
     }
 
     checkWinner(player) {
-        // Implement winning logic
+        console.log(`Checking winner for player ${player}`);
         const ROWS = this.board.length;
         const COLS = this.board[0].length;
-        
+
         // Check horizontal, vertical, diagonal
         for (let row = 0; row < ROWS; row++) {
             for (let col = 0; col < COLS; col++) {
@@ -57,12 +58,12 @@ class ConnectFour {
             }
         }
 
-        return false; // Aucune rangée de 4 jetons alignés n'a été trouvée
+        return false; // No winner found
     }
 
     getCellValue(row, col) {
         if (row < 0 || row >= this.board.length || col < 0 || col >= this.board[0].length) {
-            return -1; // Retourne -1 si la cellule est hors limites
+            return -1; // Return -1 if out of bounds
         }
         return this.board[row][col];
     }
