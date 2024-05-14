@@ -17,10 +17,19 @@ var upgrader = websocket.Upgrader{
 
 var clients = make(map[*websocket.Conn]bool)
 var broadcast = make(chan Message)
+var queue = []Player{}
 
 type Message struct {
-	Column int    `json:"column"`
-	Player string `json:"player"`
+	Type     string `json:"type"`
+	Username string `json:"username,omitempty"`
+	Column   int    `json:"column,omitempty"`
+	Player   string `json:"player,omitempty"`
+	Opponent string `json:"opponent,omitempty"`
+}
+
+type Player struct {
+	Conn     *websocket.Conn
+	Username string
 }
 
 func main() {
@@ -48,10 +57,50 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 			delete(clients, ws)
 			break
 		}
+		handleClientMessage(ws, msg)
+	}
+}
+
+func handleClientMessage(ws *websocket.Conn, msg Message) {
+	switch msg.Type {
+	case "join_queue":
+		// Vérifier si le joueur est déjà dans la file d'attente
+		for _, player := range queue {
+			if player.Conn == ws {
+				return
+			}
+		}
+		queue = append(queue, Player{Conn: ws, Username: msg.Username})
+		notifyQueueSize()
+
+		if len(queue) >= 2 {
+			player1 := queue[0]
+			player2 := queue[1]
+			queue = queue[2:]
+
+			player1.Conn.WriteJSON(Message{Type: "match_found", Opponent: player2.Username})
+			player2.Conn.WriteJSON(Message{Type: "match_found", Opponent: player1.Username})
+		}
+	case "leave_queue":
+		for i, player := range queue {
+			if player.Conn == ws {
+				queue = append(queue[:i], queue[i+1:]...)
+				break
+			}
+		}
+		notifyQueueSize()
+	default:
 		broadcast <- msg
 	}
 }
 
+// Nouvelle fonction pour notifier la taille de la file d'attente
+func notifyQueueSize() {
+	queueSizeMessage := Message{Type: "queue_size", Column: len(queue)}
+	for _, player := range queue {
+		player.Conn.WriteJSON(queueSizeMessage)
+	}
+}
 func handleMessages() {
 	for {
 		msg := <-broadcast
