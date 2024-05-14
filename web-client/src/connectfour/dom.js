@@ -1,4 +1,6 @@
 document.addEventListener("DOMContentLoaded", function() {
+    console.log("DOM fully loaded and parsed");
+
     const ROWS = 6;
     const COLS = 7;
     const board = document.getElementById("board");
@@ -7,12 +9,24 @@ document.addEventListener("DOMContentLoaded", function() {
     const game = new ConnectFour();
     const socket = new WebSocket("ws://localhost:8080/ws");
 
+    socket.onopen = function(event) {
+        console.log("WebSocket is open now.");
+    };
+
+    socket.onclose = function(event) {
+        console.log("WebSocket is closed now.");
+    };
+
+    socket.onerror = function(event) {
+        console.error("WebSocket error observed:", event);
+    };
+
     socket.onmessage = function(event) {
         const message = JSON.parse(event.data);
+        console.log("Message from server:", message);
         handleMove(message.column, message.player);
     };
 
-    // Ajouter un gestionnaire d'événements pour les clics sur les cellules du plateau
     board.addEventListener("click", function(event) {
         const cell = event.target;
         const col = parseInt(cell.dataset.col);
@@ -26,7 +40,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    // Fonction pour gérer le mouvement reçu via WebSocket
     function handleMove(column, player) {
         const row = getLowestEmptyRow(column); // Obtient la ligne la plus basse vide dans la colonne
         if (row !== -1) {
@@ -45,7 +58,22 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    // Fonction pour obtenir la ligne la plus basse vide dans une colonne donnée
+    function createBoard() {
+        console.log("Creating game board");
+        for (let row = 0; row < ROWS; row++) {
+            for (let col = 0; col < COLS; col++) {
+                const cell = document.createElement("div");
+                cell.classList.add("cell");
+                cell.dataset.row = row;
+                cell.dataset.col = col;
+                cell.dataset.value = "0"; // Initialiser la valeur à 0 pour représenter une case vide
+                board.appendChild(cell);
+            }
+        }
+    }
+
+    createBoard();
+
     function getLowestEmptyRow(col) {
         const cellsInColumn = document.querySelectorAll(`[data-col="${col}"]`);
         for (let i = cellsInColumn.length - 1; i >= 0; i--) {
@@ -56,7 +84,6 @@ document.addEventListener("DOMContentLoaded", function() {
         return -1; // Retourne -1 si la colonne est pleine
     }
 
-    // Fonction pour réinitialiser le plateau de jeu
     function resetBoard() {
         const cells = document.querySelectorAll(".cell");
         cells.forEach(cell => {

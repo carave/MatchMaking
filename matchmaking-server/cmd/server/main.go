@@ -11,33 +11,57 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return true // Permet les requêtes de toutes les origines
+		return true // Permettre les requêtes de toutes les origines
 	},
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer conn.Close()
+var clients = make(map[*websocket.Conn]bool)
+var broadcast = make(chan Message)
 
-	for {
-		_, message, err := conn.ReadMessage()
-		if err != nil {
-			log.Println(err)
-			break
-		}
-		log.Printf("Received: %s", message)
-		if err = conn.WriteMessage(websocket.TextMessage, message); err != nil {
-			log.Println(err)
-			break
-		}
-	}
+type Message struct {
+	Column int    `json:"column"`
+	Player string `json:"player"`
 }
 
 func main() {
-	http.HandleFunc("/", handler)
+	http.HandleFunc("/ws", handleConnections)
+	go handleMessages()
+
+	log.Println("Serveur démarré sur :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func handleConnections(w http.ResponseWriter, r *http.Request) {
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ws.Close()
+
+	clients[ws] = true
+
+	for {
+		var msg Message
+		err := ws.ReadJSON(&msg)
+		if err != nil {
+			log.Printf("error: %v", err)
+			delete(clients, ws)
+			break
+		}
+		broadcast <- msg
+	}
+}
+
+func handleMessages() {
+	for {
+		msg := <-broadcast
+		for client := range clients {
+			err := client.WriteJSON(msg)
+			if err != nil {
+				log.Printf("error: %v", err)
+				client.Close()
+				delete(clients, client)
+			}
+		}
+	}
 }
