@@ -1,0 +1,24 @@
+{
+  "name": "web-client",
+  "version": "1.0.0",
+  "description": "Puissance 4 web client",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "webpack serve --open",
+    "build": "webpack --mode production",
+    "test": "jest"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "jest": "^27.0.0",
+    "webpack": "^5.0.0",
+    "webpack-cli": "^4.0.0",
+    "webpack-dev-server": "^4.0.0"
+  },
+  "jest": {
+    "testEnvironment": "jsdom"
+ }
+}

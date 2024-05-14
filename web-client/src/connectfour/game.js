@@ -1,145 +1,72 @@
-document.addEventListener("DOMContentLoaded", function() {
-    const ROWS = 6;
-    const COLS = 7;
-    const board = document.getElementById("board");
-    let currentPlayer = "red"; // Initialise le joueur actif (rouge)
+class ConnectFour {
+    constructor() {
+        this.board = this.createBoard();
+        this.currentPlayer = 1;
+    }
 
-    // Ajouter un gestionnaire d'événements pour les clics sur les cellules du plateau
-    board.addEventListener("click", handleClick);
+    createBoard() {
+        return new Array(6).fill(null).map(() => new Array(7).fill(0));
+    }
 
-    // Appeler la fonction pour créer le plateau de jeu
-    createBoard();
+    makeMove(column) {
+        for (let i = this.board.length - 1; i >= 0; i--) {
+            if (this.board[i][column] === 0) {
+                this.board[i][column] = this.currentPlayer;
+                if (this.checkWinner(this.currentPlayer)) {
+                    return `${this.currentPlayer} wins`;
+                }
+                this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
+                return true;
+            }
+        }
+        return false; // column is full
+    }
 
-    // Fonction pour créer le plateau de jeu
-    function createBoard() {
+    checkWinner(player) {
+        // Implement winning logic
+        // Vérifier les lignes, les colonnes et les diagonales
+        const ROWS = this.board.length;
+        const COLS = this.board[0].length;
+        
+        // Check horizontal, vertical, diagonal
         for (let row = 0; row < ROWS; row++) {
             for (let col = 0; col < COLS; col++) {
-                const cell = document.createElement("div");
-                cell.classList.add("cell");
-                cell.dataset.row = row;
-                cell.dataset.col = col;
-                cell.dataset.value = "0"; // Initialiser la valeur à 0 pour représenter une case vide
-                board.appendChild(cell);
-            }
-        }
-    }
-
-    // Fonction pour détecter les clics sur les cellules du plateau
-    function handleClick(event) {
-        const cell = event.target;
-        const col = parseInt(cell.dataset.col);
-        const row = getLowestEmptyRow(col); // Obtient la ligne la plus basse vide dans la colonne
-
-        if (row !== -1) {
-            // Place le jeton dans la cellule correspondante
-            const cellToPlace = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-            const currentPlayerToken = (currentPlayer === "red") ? "1" : "2";
-            cellToPlace.dataset.value = currentPlayerToken;
-            cellToPlace.classList.add(currentPlayer); // Ajoute la classe correspondant à la couleur du joueur
-
-            // Vérifie si le joueur actif a gagné
-            if (checkWin(currentPlayerToken)) {
-                setTimeout(() => {
-                    alert("Le joueur " + (currentPlayer === "red" ? "Rouge" : "Jaune") + " a gagné !");
-                    // Réinitialise le plateau de jeu après la victoire
-                    resetBoard();
-                }, 100);
-                return;
-            }
-
-            // Change le joueur actif pour le prochain tour
-            currentPlayer = (currentPlayer === "red") ? "yellow" : "red";
-        } else {
-            // La colonne est pleine, affichez un message d'avertissement
-            alert("La colonne est pleine !");
-        }
-    }
-
-    // Fonction pour obtenir la ligne la plus basse vide dans une colonne donnée
-    function getLowestEmptyRow(col) {
-        const cellsInColumn = document.querySelectorAll(`[data-col="${col}"]`);
-        for (let i = cellsInColumn.length - 1; i >= 0; i--) {
-            if (cellsInColumn[i].dataset.value === "0") {
-                return parseInt(cellsInColumn[i].dataset.row);
-            }
-        }
-        return -1; // Retourne -1 si la colonne est pleine
-    }
-
-    // Fonction pour vérifier si un joueur a une rangée de 4 jetons alignés
-    function checkWin(player) {
-        // Vérifier les lignes
-        for (let row = 0; row < ROWS; row++) {
-            for (let col = 0; col <= COLS - 4; col++) {
                 if (
-                    getCellValue(row, col) === player &&
-                    getCellValue(row, col + 1) === player &&
-                    getCellValue(row, col + 2) === player &&
-                    getCellValue(row + 3, col + 3) === player
-                ) {
-                    return true;
-                }
-            }
-        }
-
-        // Vérifier les colonnes
-        for (let col = 0; col < COLS; col++) {
-            for (let row = 0; row <= ROWS - 4; row++) {
+                    this.getCellValue(row, col) === player &&
+                    this.getCellValue(row, col + 1) === player &&
+                    this.getCellValue(row, col + 2) === player &&
+                    this.getCellValue(row, col + 3) === player
+                ) return true;
                 if (
-                    getCellValue(row, col) === player &&
-                    getCellValue(row + 1, col) === player &&
-                    getCellValue(row + 2, col) === player &&
-                    getCellValue(row + 3, col) === player
-                ) {
-                    return true;
-                }
-            }
-        }
-
-        // Vérifier les diagonales (de gauche à droite)
-        for (let row = 0; row <= ROWS - 4; row++) {
-            for (let col = 0; col <= COLS - 4; col++) {
+                    this.getCellValue(row, col) === player &&
+                    this.getCellValue(row + 1, col) === player &&
+                    this.getCellValue(row + 2, col) === player &&
+                    this.getCellValue(row + 3, col) === player
+                ) return true;
                 if (
-                    getCellValue(row, col) === player &&
-                    getCellValue(row + 1, col + 1) === player &&
-                    getCellValue(row + 2, col + 2) === player &&
-                    getCellValue(row + 3, col + 3) === player
-                ) {
-                    return true;
-                }
-            }
-        }
-
-        // Vérifier les diagonales (de droite à gauche)
-        for (let row = 0; row <= ROWS - 4; row++) {
-            for (let col = COLS - 1; col >= 3; col--) {
+                    this.getCellValue(row, col) === player &&
+                    this.getCellValue(row + 1, col + 1) === player &&
+                    this.getCellValue(row + 2, col + 2) === player &&
+                    this.getCellValue(row + 3, col + 3) === player
+                ) return true;
                 if (
-                    getCellValue(row, col) === player &&
-                    getCellValue(row + 1, col - 1) === player &&
-                    getCellValue(row + 2, col - 2) === player &&
-                    getCellValue(row + 3, col - 3) === player
-                ) {
-                    return true;
-                }
+                    this.getCellValue(row, col) === player &&
+                    this.getCellValue(row + 1, col - 1) === player &&
+                    this.getCellValue(row + 2, col - 2) === player &&
+                    this.getCellValue(row + 3, col - 3) === player
+                ) return true;
             }
         }
 
         return false; // Aucune rangée de 4 jetons alignés n'a été trouvée
     }
 
-    // Fonction pour obtenir la valeur d'une cellule dans le plateau de jeu
-    function getCellValue(row, col) {
-        const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-        return cell ? parseInt(cell.dataset.value) : -1; // Retourne -1 si la cellule est hors limites
+    getCellValue(row, col) {
+        if (row < 0 || row >= this.board.length || col < 0 || col >= this.board[0].length) {
+            return -1; // Retourne -1 si la cellule est hors limites
+        }
+        return this.board[row][col];
     }
+}
 
-    // Fonction pour réinitialiser le plateau de jeu
-    function resetBoard() {
-        const cells = document.querySelectorAll(".cell");
-        cells.forEach(cell => {
-            cell.dataset.value = "0";
-            cell.classList.remove("red", "yellow");
-        });
-        currentPlayer = "red"; // Réinitialise le joueur actif
-    }
-});
+module.exports = { ConnectFour };
