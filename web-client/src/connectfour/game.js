@@ -24,7 +24,6 @@ class ConnectFour {
 
     checkWinner(player) {
         // Implement winning logic
-        // Vérifier les lignes, les colonnes et les diagonales
         const ROWS = this.board.length;
         const COLS = this.board[0].length;
         
@@ -68,5 +67,3 @@ class ConnectFour {
         return this.board[row][col];
     }
 }
-
-module.exports = { ConnectFour };
