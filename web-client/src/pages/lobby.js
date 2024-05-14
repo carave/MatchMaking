@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", function() {
         socket.onmessage = function(event) {
             const message = JSON.parse(event.data);
             if (message.type === "queue_size") {
-                queueStatus.textContent = `Number of players in queue: ${message.Column}`;
+                queueStatus.textContent = `Number of players in queue: ${message.count}`;
             }
             if (message.type === "match_found") {
                 queueStatus.textContent = "Match found! Redirecting to game...";

@@ -22,7 +22,8 @@ var queue = []Player{}
 type Message struct {
 	Type     string `json:"type"`
 	Username string `json:"username,omitempty"`
-	Column   int    `json:"column,omitempty"`
+	Column   int    `json:"column,omitempty"` // Utilisé pour les messages de jeu
+	Count    int    `json:"count,omitempty"`  // Utilisé pour le nombre de joueurs dans la file d'attente
 	Player   string `json:"player,omitempty"`
 	Opponent string `json:"opponent,omitempty"`
 }
@@ -96,11 +97,12 @@ func handleClientMessage(ws *websocket.Conn, msg Message) {
 
 // Nouvelle fonction pour notifier la taille de la file d'attente
 func notifyQueueSize() {
-	queueSizeMessage := Message{Type: "queue_size", Column: len(queue)}
+	queueSizeMessage := Message{Type: "queue_size", Count: len(queue)}
 	for _, player := range queue {
 		player.Conn.WriteJSON(queueSizeMessage)
 	}
 }
+
 func handleMessages() {
 	for {
 		msg := <-broadcast
