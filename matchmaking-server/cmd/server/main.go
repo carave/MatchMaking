@@ -4,6 +4,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -19,28 +20,35 @@ var upgrader = websocket.Upgrader{
 
 var clients = make(map[*websocket.Conn]bool)
 var broadcast = make(chan Message)
-var queue = []Player{}
+var queue = struct {
+	sync.Mutex
+	players []Player
+}{players: []Player{}}
 
 type Message struct {
-	Type     string `json:"type"`
-	Username string `json:"username,omitempty"`
-	Column   int    `json:"column,omitempty"`
-	Count    int    `json:"count,omitempty"`
-	Player   string `json:"player,omitempty"`
-	Opponent string `json:"opponent,omitempty"`
-	Turn     int    `json:"turn,omitempty"`
+	Type          string `json:"type"`
+	Username      string `json:"username,omitempty"`
+	Column        int    `json:"column,omitempty"`
+	Player        string `json:"player,omitempty"`
+	Opponent      string `json:"opponent,omitempty"`
+	Turn          int    `json:"turn,omitempty"`
+	CurrentPlayer string `json:"currentPlayer,omitempty"`
+	Color         string `json:"color,omitempty"`
+	Count         int    `json:"count,omitempty"`
 }
 
 type Player struct {
 	Conn     *websocket.Conn
 	Username string
+	Color    string
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 	http.HandleFunc("/ws", handleConnections)
 	go handleMessages()
 
-	log.Println("Serveur démarré sur :8080")
+	log.Println("Server started on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
@@ -51,6 +59,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 	}
 	defer ws.Close()
 
+	log.Printf("New client connected: %s", ws.RemoteAddr().String())
 	clients[ws] = true
 
 	for {
@@ -61,6 +70,7 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 			delete(clients, ws)
 			break
 		}
+		log.Printf("Received message: %+v", msg)
 		handleClientMessage(ws, msg)
 	}
 }
@@ -68,37 +78,45 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 func handleClientMessage(ws *websocket.Conn, msg Message) {
 	switch msg.Type {
 	case "join_queue":
-		for _, player := range queue {
-			if player.Conn == ws {
-				return
-			}
-		}
-		queue = append(queue, Player{Conn: ws, Username: msg.Username})
+		log.Printf("Player %s joining queue", msg.Username)
+		queue.Lock()
+		queue.players = append(queue.players, Player{Conn: ws, Username: msg.Username})
+		queue.Unlock()
 		notifyQueueSize()
 
-		if len(queue) >= 2 {
-			player1 := queue[0]
-			player2 := queue[1]
-			queue = queue[2:]
+		if len(queue.players) >= 2 {
+			log.Println("Two players in queue, starting match")
+			queue.Lock()
+			player1 := queue.players[0]
+			player2 := queue.players[1]
+			queue.players = queue.players[2:]
+			queue.Unlock()
 
-			rand.Seed(time.Now().UnixNano())
-			startingPlayer := player1.Username
-			if rand.Intn(2) == 0 {
-				startingPlayer = player2.Username
+			startingPlayerIndex := rand.Intn(2)
+			player1Color := "red"
+			player2Color := "yellow"
+
+			if startingPlayerIndex == 1 {
+				player1Color = "yellow"
+				player2Color = "red"
 			}
 
-			player1.Conn.WriteJSON(Message{Type: "match_found", Opponent: player2.Username, Player: startingPlayer, Turn: 1})
-			player2.Conn.WriteJSON(Message{Type: "match_found", Opponent: player1.Username, Player: startingPlayer, Turn: 1})
+			player1.Conn.WriteJSON(Message{Type: "match_found", Opponent: player2.Username, Player: player1.Username, Turn: 1, CurrentPlayer: player1.Username, Color: player1Color})
+			player2.Conn.WriteJSON(Message{Type: "match_found", Opponent: player1.Username, Player: player2.Username, Turn: 1, CurrentPlayer: player1.Username, Color: player2Color})
 		}
 	case "leave_queue":
-		for i, player := range queue {
+		log.Printf("Player %s leaving queue", msg.Username)
+		queue.Lock()
+		for i, player := range queue.players {
 			if player.Conn == ws {
-				queue = append(queue[:i], queue[i+1:]...)
+				queue.players = append(queue.players[:i], queue.players[i+1:]...)
 				break
 			}
 		}
+		queue.Unlock()
 		notifyQueueSize()
 	case "move":
+		log.Printf("Player %s made a move in column %d", msg.Player, msg.Column)
 		broadcast <- msg
 	default:
 		log.Printf("Unhandled message type: %s", msg.Type)
@@ -106,8 +124,10 @@ func handleClientMessage(ws *websocket.Conn, msg Message) {
 }
 
 func notifyQueueSize() {
-	queueSizeMessage := Message{Type: "queue_size", Count: len(queue)}
-	for _, player := range queue {
+	queue.Lock()
+	queueSizeMessage := Message{Type: "queue_size", Count: len(queue.players)}
+	queue.Unlock()
+	for _, player := range queue.players {
 		player.Conn.WriteJSON(queueSizeMessage)
 	}
 }
@@ -115,6 +135,7 @@ func notifyQueueSize() {
 func handleMessages() {
 	for {
 		msg := <-broadcast
+		log.Printf("Broadcasting message: %+v", msg)
 		for client := range clients {
 			err := client.WriteJSON(msg)
 			if err != nil {
