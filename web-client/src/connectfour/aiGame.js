@@ -26,39 +26,41 @@ document.addEventListener("DOMContentLoaded", function() {
 
     createBoard();
 
-    const GameState = {
-        PLAYER_TURN: 'PLAYER_TURN',
-        AI_TURN: 'AI_TURN'
-    };
-    
-    let gameState = GameState.PLAYER_TURN; // Initialisation de l'état du jeu comme le tour du joueur
-    
-    // Fonction pour gérer le clic sur le plateau
     boardElement.addEventListener("click", function(event) {
-        if (!gameActive) return; // Si le jeu n'est pas actif, ne rien faire
+        if (!gameActive || currentPlayer !== "red") return; // Vérifie si c'est le tour du joueur 1 (rouge)
     
         const cell = event.target;
         const col = parseInt(cell.dataset.col);
-        
-        if (gameState === GameState.PLAYER_TURN && currentPlayer === "red") {
-            // Si c'est le tour du joueur et que le joueur est rouge, effectuer un coup
-            if (game.makeMove(col)) {
-                handleMove(col, currentPlayer);
-                gameState = GameState.AI_TURN; // Passer au tour de l'IA
-                handleAITurn(); // Exécuter le tour de l'IA
+        if (game.makeMove(col)) {
+            handleMove(col, currentPlayer);
+    
+            if (game.checkWinner(1)) { // Vérifie si le joueur humain (rouge) a gagné
+                alert("Le joueur rouge a gagné !");
+                gameActive = false;
+                return;
+            }
+    
+            if (gameActive) { // Vérifie si le jeu est toujours actif après le mouvement du joueur
+                currentPlayer = "yellow"; // Changement de joueur après que le joueur rouge a joué
+                
+                // Si le jeu est contre l'IA et c'est le tour de l'IA
+                if (currentPlayer === "yellow") {
+                    setTimeout(() => {
+                        const aiMove = getBestMove();
+                        if (aiMove !== -1) {
+                            handleMove(aiMove, currentPlayer);
+                            if (game.checkWinner(2)) { // Vérifie si l'IA (jaune) a gagné après avoir joué
+                                alert("L'IA a gagné !");
+                                gameActive = false;
+                                return;
+                            }
+                            currentPlayer = "red"; // Après que l'IA a joué, c'est à nouveau le tour du joueur 1 (rouge)
+                        }
+                    }, 500);
+                }
             }
         }
     });
-    
-    function handleAITurn() {
-        setTimeout(() => {
-            const aiMove = getBestMove();
-            if (aiMove !== -1) {
-                handleMove(aiMove, "yellow");
-                gameState = GameState.PLAYER_TURN; // Passer au tour du joueur
-            }
-        }, 500);
-    }
     
     function handleMove(column, player) {
         const row = game.getLowestEmptyRow(column);
@@ -77,7 +79,7 @@ document.addEventListener("DOMContentLoaded", function() {
         } else {
             alert("La colonne est pleine !");
         }
-    }
+    } 
 
     function resetBoard() {
         const cells = document.querySelectorAll(".cell");
