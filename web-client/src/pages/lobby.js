@@ -18,6 +18,15 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
+    // Ajout d'un événement pour le bouton "Play Connect Four Against AI"
+    const playConnectFourAgainstAIButton = document.getElementById("play-connect-four-agganst-AI");
+    playConnectFourAgainstAIButton.addEventListener("click", function() {
+        const username = usernameInput.value.trim();
+        if (username) {
+            window.location.href = `connect-four-against-ai.html?player=${username}`; // Redirection vers la page de jeu Connect Four contre l'IA avec le nom d'utilisateur
+        }
+    });
+
     function joinQueue(username) {
         socket = new WebSocket("ws://localhost:8080/ws");
 
