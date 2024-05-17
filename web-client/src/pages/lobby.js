@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", function() {
     const form = document.getElementById("lobby-form");
     const usernameInput = document.getElementById("username");
+    const playVsPlayerButton = document.getElementById("play-vs-player");
+    const playVsAiButton = document.getElementById("play-vs-ai");
     const queueStatus = document.getElementById("queue-status");
     const leaveButton = document.createElement("button");
     leaveButton.id = "leave-button";
@@ -10,11 +12,17 @@ document.addEventListener("DOMContentLoaded", function() {
 
     let socket; // Déclaration de la variable socket en dehors des fonctions
 
-    form.addEventListener("submit", function(event) {
-        event.preventDefault();
+    playVsPlayerButton.addEventListener("click", function() {
         const username = usernameInput.value.trim();
         if (username) {
             joinQueue(username);
+        }
+    });
+
+    playVsAiButton.addEventListener("click", function() {
+        const username = usernameInput.value.trim();
+        if (username) {
+            window.location.href = `aiGame.html?player=${username}`;
         }
     });
 
