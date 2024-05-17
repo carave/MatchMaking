@@ -1,4 +1,8 @@
 document.addEventListener("DOMContentLoaded", function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const playerName = urlParams.get('player');
+    console.log(`Player Name: ${playerName}`);
+
     const ROWS = 6;
     const COLS = 7;
     const boardElement = document.getElementById("board");
