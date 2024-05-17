@@ -40,6 +40,9 @@ document.addEventListener("DOMContentLoaded", function() {
         console.log("Message from server:", message);
 
         switch (message.type) {
+            case "queue_size":
+                console.log("Queue size:", message.count);
+                break;
             case "match_found":
                 console.log("Match found:", message);
                 playerColor = (message.player === player) ? "red" : "yellow";
@@ -203,57 +206,49 @@ class ConnectFour {
     }
 
     checkWinner(player) {
-        // Check rows
+        // Check horizontal win
         for (let row = 0; row < 6; row++) {
             for (let col = 0; col <= 7 - 4; col++) {
-                if (
-                    this.board[row][col] === player &&
+                if (this.board[row][col] === player &&
                     this.board[row][col + 1] === player &&
                     this.board[row][col + 2] === player &&
-                    this.board[row][col + 3] === player
-                ) {
+                    this.board[row][col + 3] === player) {
                     return true;
                 }
             }
         }
 
-        // Check columns
+        // Check vertical win
         for (let col = 0; col < 7; col++) {
             for (let row = 0; row <= 6 - 4; row++) {
-                if (
-                    this.board[row][col] === player &&
+                if (this.board[row][col] === player &&
                     this.board[row + 1][col] === player &&
                     this.board[row + 2][col] === player &&
-                    this.board[row + 3][col] === player
-                ) {
+                    this.board[row + 3][col] === player) {
                     return true;
                 }
             }
         }
 
-        // Check diagonals (left to right)
+        // Check diagonal (left to right) win
         for (let row = 0; row <= 6 - 4; row++) {
             for (let col = 0; col <= 7 - 4; col++) {
-                if (
-                    this.board[row][col] === player &&
+                if (this.board[row][col] === player &&
                     this.board[row + 1][col + 1] === player &&
                     this.board[row + 2][col + 2] === player &&
-                    this.board[row + 3][col + 3] === player
-                ) {
+                    this.board[row + 3][col + 3] === player) {
                     return true;
                 }
             }
         }
 
-        // Check diagonals (right to left)
+        // Check diagonal (right to left) win
         for (let row = 0; row <= 6 - 4; row++) {
             for (let col = 3; col < 7; col++) {
-                if (
-                    this.board[row][col] === player &&
+                if (this.board[row][col] === player &&
                     this.board[row + 1][col - 1] === player &&
                     this.board[row + 2][col - 2] === player &&
-                    this.board[row + 3][col - 3] === player
-                ) {
+                    this.board[row + 3][col - 3] === player) {
                     return true;
                 }
             }
