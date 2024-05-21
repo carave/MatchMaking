@@ -2,10 +2,8 @@ package main
 
 import (
 	"log"
-	"math/rand"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -29,22 +27,20 @@ type Message struct {
 	Type          string `json:"type"`
 	Username      string `json:"username,omitempty"`
 	Column        int    `json:"column,omitempty"`
+	Row           int    `json:"row,omitempty"`
 	Player        string `json:"player,omitempty"`
 	Opponent      string `json:"opponent,omitempty"`
 	Turn          int    `json:"turn,omitempty"`
 	CurrentPlayer string `json:"currentPlayer,omitempty"`
-	Color         string `json:"color,omitempty"`
 	Count         int    `json:"count,omitempty"`
 }
 
 type Player struct {
 	Conn     *websocket.Conn
 	Username string
-	Color    string
 }
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
 	http.HandleFunc("/ws", handleConnections)
 	go handleMessages()
 
@@ -92,17 +88,8 @@ func handleClientMessage(ws *websocket.Conn, msg Message) {
 			queue.players = queue.players[2:]
 			queue.Unlock()
 
-			startingPlayerIndex := rand.Intn(2)
-			player1Color := "red"
-			player2Color := "yellow"
-
-			if startingPlayerIndex == 1 {
-				player1Color = "yellow"
-				player2Color = "red"
-			}
-
-			player1.Conn.WriteJSON(Message{Type: "match_found", Opponent: player2.Username, Player: player1.Username, Turn: 1, CurrentPlayer: player1.Username, Color: player1Color})
-			player2.Conn.WriteJSON(Message{Type: "match_found", Opponent: player1.Username, Player: player2.Username, Turn: 1, CurrentPlayer: player1.Username, Color: player2Color})
+			player1.Conn.WriteJSON(Message{Type: "match_found", Opponent: player2.Username, Player: player1.Username, Turn: 1, CurrentPlayer: player1.Username})
+			player2.Conn.WriteJSON(Message{Type: "match_found", Opponent: player1.Username, Player: player2.Username, Turn: 1, CurrentPlayer: player1.Username})
 		}
 	case "leave_queue":
 		log.Printf("Player %s leaving queue", msg.Username)

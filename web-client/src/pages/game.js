@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", function() {
     let opponentColor;
     let turn = 1;
     let isMyTurn = false;
+    const myPlayerId = player === 'a' ? 1 : 2;
 
     const game = new ConnectFour();
     const socket = new WebSocket("ws://localhost:8080/ws");
@@ -56,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function() {
             case "move":
                 console.log("Move received:", message);
                 if (message.player !== player) {
-                    handleMove(message.column, opponentColor);
+                    handleMove(message.column, opponentColor, message.row);
                 }
                 currentPlayer = message.currentPlayer;
                 isMyTurn = currentPlayer === player;
@@ -73,24 +74,25 @@ document.addEventListener("DOMContentLoaded", function() {
 
         const cell = event.target;
         const col = parseInt(cell.dataset.col);
-        const move = game.makeMove(col, 1);
+        const move = game.makeMove(col, myPlayerId);
 
         if (move) {
             const { row } = move;
             const cellToPlace = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
             console.log(`Placing ${player} piece at row ${row}, col ${col}`);
-            cellToPlace.dataset.value = "1";
+            cellToPlace.dataset.value = myPlayerId.toString();
             cellToPlace.classList.add(playerColor);
 
             socket.send(JSON.stringify({
                 type: "move",
                 column: col,
+                row: row,
                 player: player,
                 turn: turn + 1,
                 currentPlayer: opponent
             }));
 
-            if (game.checkWinner(1)) {
+            if (game.checkWinner(myPlayerId)) {
                 messageDiv.textContent = "You win!";
                 showEndGamePopup("You win!");
             }
@@ -154,13 +156,19 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    function handleMove(col, color) {
-        const move = game.makeMove(col, 1);
-        if (move) {
-            const { row } = move;
+    function handleMove(col, color, row) {
+        if (row === undefined) {
+            const move = game.makeMove(col, myPlayerId === 1 ? 2 : 1);
+            row = move ? move.row : undefined;
+        }
+        if (row !== undefined) {
             const cellToPlace = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            if (!cellToPlace) {
+                console.error(`Cannot find cell at row ${row}, col ${col}`);
+                return;
+            }
             console.log(`Placing piece at row ${row}, col ${col}`);
-            cellToPlace.dataset.value = "1";
+            cellToPlace.dataset.value = myPlayerId === 1 ? "2" : "1";
             cellToPlace.classList.add(color);
         }
     }
@@ -191,6 +199,7 @@ class ConnectFour {
         const row = this.getLowestEmptyRow(col);
         if (row !== -1) {
             this.board[row][col] = player;
+            console.log(`Move made: player ${player} at row ${row}, col ${col}`);
             return { row, col };
         }
         return null;
