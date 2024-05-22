@@ -34,6 +34,7 @@ type Message struct {
 	CurrentPlayer string  `json:"currentPlayer,omitempty"`
 	Count         int     `json:"count,omitempty"`
 	Board         [][]int `json:"board,omitempty"`
+	Result        string  `json:"result,omitempty"`
 }
 
 type Player struct {
@@ -107,6 +108,9 @@ func handleClientMessage(ws *websocket.Conn, msg Message) {
 		notifyQueueSize()
 	case "move":
 		log.Printf("Player %s made a move in column %d on row %d", msg.Player, msg.Column, msg.Row)
+		broadcast <- msg
+	case "game_end":
+		log.Printf("Game ended: %s vs %s, result: %s", msg.Player, msg.Opponent, msg.Result)
 		broadcast <- msg
 	default:
 		log.Printf("Unhandled message type: %s", msg.Type)

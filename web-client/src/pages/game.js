@@ -14,6 +14,8 @@ document.addEventListener("DOMContentLoaded", function() {
     let opponentColor;
     let turn = 1;
     let isMyTurn = false;
+    let gameStarted = false;
+    let gameEnded = false;
     const myPlayerId = player === 'a' ? 1 : 2;
 
     const game = new ConnectFour();
@@ -26,9 +28,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
     socket.onclose = function(event) {
         console.log("WebSocket is closed now.");
-        if (currentPlayer === player) {
+        if (currentPlayer === player && gameStarted) {
             alert("Your opponent has left the game. You win!");
             showEndGamePopup("You win!");
+            gameEnded = true;
         }
     };
 
@@ -54,10 +57,11 @@ document.addEventListener("DOMContentLoaded", function() {
                 game.board = message.board || game.createBoard();  // Initialize the board with the server's board or create a new one
                 updateTurnInfo();
                 createBoard();
+                gameStarted = true;
                 break;
             case "move":
                 console.log("Move received:", message);
-                if (message.player !== player) {
+                if (message.player !== player && !gameEnded) {
                     handleMove(message.column, opponentColor, message.row);
                 }
                 currentPlayer = message.currentPlayer;
@@ -66,13 +70,33 @@ document.addEventListener("DOMContentLoaded", function() {
                 game.board = message.board || game.createBoard();  // Update the board with the server's board or create a new one
                 updateTurnInfo();
                 break;
+            case "game_end":
+                console.log("Game ended with result:", message.result);
+                gameEnded = true;
+                if (message.result === "win") {
+                    if (message.player === player) {
+                        showEndGamePopup("You win!");
+                    } else {
+                        showEndGamePopup("You lose!");
+                    }
+                } else if (message.result === "tie") {
+                    showEndGamePopup("It's a tie!");
+                }
+                break;
+            case "opponent_left":
+                if (gameStarted) {
+                    alert("Your opponent has left the game. You win!");
+                    showEndGamePopup("You win!");
+                    gameEnded = true;
+                }
+                break;
             default:
                 console.log("Unhandled message type:", message.type);
         }
     };
 
     board.addEventListener("click", function(event) {
-        if (!isMyTurn) return;
+        if (!isMyTurn || gameEnded) return;
 
         const cell = event.target;
         const col = parseInt(cell.dataset.col);
@@ -99,10 +123,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
             if (game.checkWinner(myPlayerId)) {
                 messageDiv.textContent = "You win!";
-                showEndGamePopup("You win!");
+                socket.send(JSON.stringify({ type: "game_end", result: "win", player: player, opponent: opponent }));
+                gameEnded = true;
             } else if (turn === 42) {
                 messageDiv.textContent = "It's a tie!";
-                showEndGamePopup("It's a tie!");
+                socket.send(JSON.stringify({ type: "game_end", result: "tie", player: player, opponent: opponent }));
+                gameEnded = true;
             }
 
             currentPlayer = opponent;
@@ -119,8 +145,16 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     leaveButton.addEventListener("click", function() {
+        socket.send(JSON.stringify({ type: "leave_queue", username: player }));
         socket.close();
         window.location.href = "index.html";
+    });
+
+    // Detect when the player closes or refreshes the page
+    window.addEventListener("beforeunload", function(event) {
+        if (gameStarted) {
+            socket.send(JSON.stringify({ type: "leave_queue", username: player }));
+        }
     });
 
     function updateTurnInfo() {
@@ -166,7 +200,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function handleMove(col, color, row) {
         if (col === undefined){
-            col = 0
+            col = 0;
         }
         if (row === undefined) {
             const move = game.makeMove(col, myPlayerId === 1 ? 2 : 1);
@@ -181,8 +215,7 @@ document.addEventListener("DOMContentLoaded", function() {
             console.log(`Placing piece at row ${row}, col ${col}`);
             cellToPlace.dataset.value = myPlayerId === 1 ? "2" : "1";
             cellToPlace.classList.add(color);
-        }
-        else{
+        } else {
             console.log("row undefined", row);
         }
     }
@@ -223,7 +256,7 @@ class ConnectFour {
     getLowestEmptyRow(col) {
         for (let row = this.board.length - 1; row >= 0; row--) {
             if (this.board[row][col] === 0) {
-                console.log("Found Lowest empty row : ", row)
+                console.log("Found Lowest empty row : ", row);
                 return row;
             }
         }
