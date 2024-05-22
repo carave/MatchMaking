@@ -9,6 +9,8 @@ document.addEventListener("DOMContentLoaded", function() {
     document.body.appendChild(leaveButton);
 
     let socket; // Déclaration de la variable socket en dehors des fonctions
+    let joinTime; // Variable pour stocker l'heure de début de l'attente
+    let intervalId; // Variable pour stocker l'ID de l'intervalle
 
     form.addEventListener("submit", function(event) {
         event.preventDefault();
@@ -26,12 +28,14 @@ document.addEventListener("DOMContentLoaded", function() {
             queueStatus.textContent = "Joining queue...";
             form.style.display = "none"; // Cacher le formulaire de join queue
             leaveButton.style.display = "block"; // Afficher le bouton leave queue
+            joinTime = Date.now(); // Enregistrer l'heure de début de l'attente
+            startTimer(); // Démarrer le minuteur
         };
 
         socket.onmessage = function(event) {
             const message = JSON.parse(event.data);
             if (message.type === "queue_size") {
-                queueStatus.textContent = `Number of players in queue: ${message.count}`;
+                queueStatus.textContent = `Number of players in queue: ${message.count} (Waiting for ${getElapsedTime()})`;
             }
             if (message.type === "match_found") {
                 queueStatus.textContent = "Match found! Redirecting to game...";
@@ -43,12 +47,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
         socket.onerror = function(event) {
             queueStatus.textContent = "Error connecting to server.";
+            stopTimer(); // Arrêter le minuteur
         };
 
         socket.onclose = function(event) {
             queueStatus.textContent = "Disconnected from server.";
             leaveButton.style.display = "none"; // Cacher le bouton leave queue
             form.style.display = "block"; // Afficher le formulaire de join queue
+            stopTimer(); // Arrêter le minuteur
         };
 
         leaveButton.addEventListener("click", function() {
@@ -57,6 +63,34 @@ document.addEventListener("DOMContentLoaded", function() {
             leaveButton.style.display = "none"; // Cacher le bouton leave queue
             form.style.display = "block"; // Afficher le formulaire de join queue
             socket.close();
+            stopTimer(); // Arrêter le minuteur
         });
+    }
+
+    function startTimer() {
+        intervalId = setInterval(updateWaitTime, 1000);
+    }
+
+    function stopTimer() {
+        clearInterval(intervalId);
+    }
+
+    function updateWaitTime() {
+        const elapsedTime = getElapsedTime();
+        const currentText = queueStatus.textContent;
+        const match = currentText.match(/Number of players in queue: \d+/);
+        if (match) {
+            queueStatus.textContent = `${match[0]} (Waiting for ${elapsedTime})`;
+        } else {
+            queueStatus.textContent = `Waiting for ${elapsedTime}`;
+        }
+    }
+
+    function getElapsedTime() {
+        const currentTime = Date.now();
+        const elapsedTime = Math.floor((currentTime - joinTime) / 1000);
+        const minutes = Math.floor(elapsedTime / 60);
+        const seconds = elapsedTime % 60;
+        return `${minutes}m ${seconds}s`;
     }
 });
