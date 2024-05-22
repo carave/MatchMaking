@@ -24,15 +24,16 @@ var queue = struct {
 }{players: []Player{}}
 
 type Message struct {
-	Type          string `json:"type"`
-	Username      string `json:"username,omitempty"`
-	Column        int    `json:"column,omitempty"`
-	Row           int    `json:"row,omitempty"`
-	Player        string `json:"player,omitempty"`
-	Opponent      string `json:"opponent,omitempty"`
-	Turn          int    `json:"turn,omitempty"`
-	CurrentPlayer string `json:"currentPlayer,omitempty"`
-	Count         int    `json:"count,omitempty"`
+	Type          string  `json:"type"`
+	Username      string  `json:"username,omitempty"`
+	Column        int     `json:"column,omitempty"`
+	Row           int     `json:"row,omitempty"`
+	Player        string  `json:"player,omitempty"`
+	Opponent      string  `json:"opponent,omitempty"`
+	Turn          int     `json:"turn,omitempty"`
+	CurrentPlayer string  `json:"currentPlayer,omitempty"`
+	Count         int     `json:"count,omitempty"`
+	Board         [][]int `json:"board,omitempty"`
 }
 
 type Player struct {
@@ -88,8 +89,10 @@ func handleClientMessage(ws *websocket.Conn, msg Message) {
 			queue.players = queue.players[2:]
 			queue.Unlock()
 
-			player1.Conn.WriteJSON(Message{Type: "match_found", Opponent: player2.Username, Player: player1.Username, Turn: 1, CurrentPlayer: player1.Username})
-			player2.Conn.WriteJSON(Message{Type: "match_found", Opponent: player1.Username, Player: player2.Username, Turn: 1, CurrentPlayer: player1.Username})
+			initialBoard := createEmptyBoard()
+
+			player1.Conn.WriteJSON(Message{Type: "match_found", Opponent: player2.Username, Player: player1.Username, Turn: 1, CurrentPlayer: player1.Username, Board: initialBoard})
+			player2.Conn.WriteJSON(Message{Type: "match_found", Opponent: player1.Username, Player: player2.Username, Turn: 1, CurrentPlayer: player1.Username, Board: initialBoard})
 		}
 	case "leave_queue":
 		log.Printf("Player %s leaving queue", msg.Username)
@@ -132,4 +135,14 @@ func handleMessages() {
 			}
 		}
 	}
+}
+
+func createEmptyBoard() [][]int {
+	rows := 6
+	cols := 7
+	board := make([][]int, rows)
+	for i := range board {
+		board[i] = make([]int, cols)
+	}
+	return board
 }

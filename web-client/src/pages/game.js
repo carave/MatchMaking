@@ -51,6 +51,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 currentPlayer = message.currentPlayer;
                 isMyTurn = currentPlayer === player;
                 turn = message.turn;
+                game.board = message.board || game.createBoard();  // Initialize the board with the server's board or create a new one
                 updateTurnInfo();
                 createBoard();
                 break;
@@ -62,6 +63,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 currentPlayer = message.currentPlayer;
                 isMyTurn = currentPlayer === player;
                 turn = message.turn;
+                game.board = message.board || game.createBoard();  // Update the board with the server's board or create a new one
                 updateTurnInfo();
                 break;
             default:
@@ -83,16 +85,16 @@ document.addEventListener("DOMContentLoaded", function() {
             cellToPlace.dataset.value = myPlayerId.toString();
             cellToPlace.classList.add(playerColor);
 
-            const moveToSend= JSON.stringify({
+            const moveToSend = JSON.stringify({
                 type: "move",
                 column: col,
                 row: row,
                 player: player,
                 turn: turn + 1,
-                currentPlayer: opponent
-            })
-            
-            console.log("Sending move:", moveToSend)
+                currentPlayer: opponent,
+                board: game.board  // Send the current state of the board
+            });
+
             socket.send(moveToSend);
 
             if (game.checkWinner(myPlayerId)) {
@@ -171,7 +173,6 @@ document.addEventListener("DOMContentLoaded", function() {
             const cellToPlace = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
             if (!cellToPlace) {
                 console.error(`Cannot find cell at row ${row}, col ${col}`);
-                
                 return;
             }
             console.log(`Placing piece at row ${row}, col ${col}`);
