@@ -100,6 +100,9 @@ document.addEventListener("DOMContentLoaded", function() {
             if (game.checkWinner(myPlayerId)) {
                 messageDiv.textContent = "You win!";
                 showEndGamePopup("You win!");
+            } else if (turn === 42) {
+                messageDiv.textContent = "It's a tie!";
+                showEndGamePopup("It's a tie!");
             }
 
             currentPlayer = opponent;
