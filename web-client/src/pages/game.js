@@ -83,14 +83,17 @@ document.addEventListener("DOMContentLoaded", function() {
             cellToPlace.dataset.value = myPlayerId.toString();
             cellToPlace.classList.add(playerColor);
 
-            socket.send(JSON.stringify({
+            const moveToSend= JSON.stringify({
                 type: "move",
                 column: col,
                 row: row,
                 player: player,
                 turn: turn + 1,
                 currentPlayer: opponent
-            }));
+            })
+            
+            console.log("Sending move:", moveToSend)
+            socket.send(moveToSend);
 
             if (game.checkWinner(myPlayerId)) {
                 messageDiv.textContent = "You win!";
@@ -157,6 +160,9 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function handleMove(col, color, row) {
+        if (col === undefined){
+            col = 0
+        }
         if (row === undefined) {
             const move = game.makeMove(col, myPlayerId === 1 ? 2 : 1);
             row = move ? move.row : undefined;
@@ -165,11 +171,15 @@ document.addEventListener("DOMContentLoaded", function() {
             const cellToPlace = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
             if (!cellToPlace) {
                 console.error(`Cannot find cell at row ${row}, col ${col}`);
+                
                 return;
             }
             console.log(`Placing piece at row ${row}, col ${col}`);
             cellToPlace.dataset.value = myPlayerId === 1 ? "2" : "1";
             cellToPlace.classList.add(color);
+        }
+        else{
+            console.log("row undefined", row);
         }
     }
 
@@ -197,6 +207,7 @@ class ConnectFour {
 
     makeMove(col, player) {
         const row = this.getLowestEmptyRow(col);
+        console.log(`Lowest empty row for col ${col} is ${row}`);
         if (row !== -1) {
             this.board[row][col] = player;
             console.log(`Move made: player ${player} at row ${row}, col ${col}`);
@@ -208,6 +219,7 @@ class ConnectFour {
     getLowestEmptyRow(col) {
         for (let row = this.board.length - 1; row >= 0; row--) {
             if (this.board[row][col] === 0) {
+                console.log("Found Lowest empty row : ", row)
                 return row;
             }
         }

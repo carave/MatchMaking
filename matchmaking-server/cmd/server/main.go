@@ -103,7 +103,7 @@ func handleClientMessage(ws *websocket.Conn, msg Message) {
 		queue.Unlock()
 		notifyQueueSize()
 	case "move":
-		log.Printf("Player %s made a move in column %d", msg.Player, msg.Column)
+		log.Printf("Player %s made a move in column %d on row %d", msg.Player, msg.Column, msg.Row)
 		broadcast <- msg
 	default:
 		log.Printf("Unhandled message type: %s", msg.Type)
