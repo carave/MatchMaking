@@ -2,14 +2,10 @@ document.addEventListener("DOMContentLoaded", function() {
     const form = document.getElementById("lobby-form");
     const usernameInput = document.getElementById("username");
     const queueStatus = document.getElementById("queue-status");
-    const leaveButton = document.createElement("button");
-    leaveButton.id = "leave-button";
-    leaveButton.textContent = "Leave Queue";
-    leaveButton.style.display = "none"; // Initialement caché
-    document.body.appendChild(leaveButton);
-
+    const leaveButton = document.getElementById("leave-button");
+    const botOptions = document.getElementById("bot-options");
     const playVsBotButton = document.getElementById("play-vs-bot");
-    const difficultySelect = document.getElementById("difficulty");
+    const difficultySelect = document.getElementById("difficulty-select");
 
     let socket; // Déclaration de la variable socket en dehors des fonctions
     let joinTime; // Variable pour stocker l'heure de début de l'attente
@@ -23,11 +19,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    playVsBotButton.addEventListener("click", function() {
-        const difficulty = difficultySelect.value;
-        window.location.href = `game.html?player=a&mode=bot&difficulty=${difficulty}`;
-    });
-
     function joinQueue(username) {
         socket = new WebSocket("ws://localhost:8080/ws");
 
@@ -36,6 +27,7 @@ document.addEventListener("DOMContentLoaded", function() {
             queueStatus.textContent = "Joining queue...";
             form.style.display = "none"; // Cacher le formulaire de join queue
             leaveButton.style.display = "block"; // Afficher le bouton leave queue
+            botOptions.style.display = "none"; // Cacher les options du bot
             joinTime = Date.now(); // Enregistrer l'heure de début de l'attente
             startTimer(); // Démarrer le minuteur
         };
@@ -62,6 +54,7 @@ document.addEventListener("DOMContentLoaded", function() {
             queueStatus.textContent = "Disconnected from server.";
             leaveButton.style.display = "none"; // Cacher le bouton leave queue
             form.style.display = "block"; // Afficher le formulaire de join queue
+            botOptions.style.display = "block"; // Afficher les options du bot
             stopTimer(); // Arrêter le minuteur
         };
 
@@ -70,6 +63,7 @@ document.addEventListener("DOMContentLoaded", function() {
             queueStatus.textContent = "You have left the queue.";
             leaveButton.style.display = "none"; // Cacher le bouton leave queue
             form.style.display = "block"; // Afficher le formulaire de join queue
+            botOptions.style.display = "block"; // Afficher les options du bot
             socket.close();
             stopTimer(); // Arrêter le minuteur
         });
@@ -101,5 +95,9 @@ document.addEventListener("DOMContentLoaded", function() {
         const seconds = elapsedTime % 60;
         return `${minutes}m ${seconds}s`;
     }
-});
 
+    playVsBotButton.addEventListener("click", function() {
+        const difficulty = difficultySelect.value;
+        window.location.href = `game.html?player=bot&difficulty=${difficulty}`;
+    });
+});
