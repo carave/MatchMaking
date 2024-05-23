@@ -384,7 +384,7 @@ class Bot {
         if (this.difficulty === "easy") {
             return this.makeRandomMove(game);
         } else {
-            return this.makeSmartMove(game);
+            return this.makePrioritizedMove(game);
         }
     }
 
@@ -399,8 +399,27 @@ class Bot {
         return game.makeMove(randomCol, 2);
     }
 
-    makeSmartMove(game) {
-        // Add your smart move logic here
-        return this.makeRandomMove(game); // Placeholder
+    makePrioritizedMove(game) {
+        for (let col = 0; col < 7; col++) {
+            const row = game.getLowestEmptyRow(col);
+            if (row !== -1) {
+                // Try to win
+                game.board[row][col] = 2;
+                if (game.checkWinner(2)) {
+                    return game.makeMove(col, 2);
+                }
+                game.board[row][col] = 0;
+
+                // Try to block opponent's win
+                game.board[row][col] = 1;
+                if (game.checkWinner(1)) {
+                    game.board[row][col] = 0;
+                    return game.makeMove(col, 2);
+                }
+                game.board[row][col] = 0;
+            }
+        }
+        // If no win or block move, make a random move
+        return this.makeRandomMove(game);
     }
 }
