@@ -1,3 +1,4 @@
+
 document.addEventListener("DOMContentLoaded", function() {
     const urlParams = new URLSearchParams(window.location.search);
     const player = urlParams.get('player');
@@ -19,6 +20,7 @@ document.addEventListener("DOMContentLoaded", function() {
     let gameEnded = false;
     const myPlayerId = player === 'a' ? 1 : 2;
     let bot;
+    let socket;
 
     const game = new ConnectFour();
 
@@ -31,7 +33,7 @@ document.addEventListener("DOMContentLoaded", function() {
         updateTurnInfo();
         createBoard();
     } else {
-        const socket = new WebSocket("ws://localhost:8080/ws");
+        socket = new WebSocket("ws://localhost:8080/ws");
 
         socket.onopen = function(event) {
             console.log("WebSocket is open now.");
@@ -159,7 +161,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     player: player,
                     turn: turn + 1,
                     currentPlayer: opponent,
-                    board: game.board 
+                    board: game.board  // Send the current state of the board
                 });
 
                 socket.send(moveToSend);
@@ -238,6 +240,7 @@ document.addEventListener("DOMContentLoaded", function() {
         popup.appendChild(closeButton);
         document.body.appendChild(popup);
 
+        // Redirect to index.html after 10 seconds
         setTimeout(function() {
             window.location.href = "index.html";
         }, 10000);

@@ -12,16 +12,16 @@
         <input type="text" id="username" placeholder="Enter your name" required>
         <button type="submit">Join Queue</button>
     </form>
-    <div id="queue-status"></div>
     <div id="bot-options">
-        <label for="difficulty-select">Choose difficulty:</label>
-        <select id="difficulty-select">
+        <h2>Or play against the computer</h2>
+        <label for="difficulty">Choose difficulty:</label>
+        <select id="difficulty">
             <option value="easy">Easy</option>
             <option value="hard">Hard</option>
         </select>
         <button id="play-vs-bot">Play vs Bot</button>
     </div>
-    <button id="leave-button" style="display:none;">Leave Queue</button>
+    <div id="queue-status"></div>
     <script src="../src/pages/lobby.js"></script>
 </body>
 </html>
