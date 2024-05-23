@@ -14,7 +14,6 @@ document.addEventListener("DOMContentLoaded", function() {
     let opponentColor;
     let turn = 1;
     let isMyTurn = false;
-    let gameStarted = false;
     let gameEnded = false;
     const myPlayerId = player === 'a' ? 1 : 2;
 
@@ -28,10 +27,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
     socket.onclose = function(event) {
         console.log("WebSocket is closed now.");
-        if (currentPlayer === player && gameStarted) {
+        if (!gameEnded && currentPlayer === player) {
             alert("Your opponent has left the game. You win!");
             showEndGamePopup("You win!");
-            gameEnded = true;
         }
     };
 
@@ -57,11 +55,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 game.board = message.board || game.createBoard();  // Initialize the board with the server's board or create a new one
                 updateTurnInfo();
                 createBoard();
-                gameStarted = true;
                 break;
             case "move":
                 console.log("Move received:", message);
-                if (message.player !== player && !gameEnded) {
+                if (message.player !== player) {
                     handleMove(message.column, opponentColor, message.row);
                 }
                 currentPlayer = message.currentPlayer;
@@ -71,23 +68,15 @@ document.addEventListener("DOMContentLoaded", function() {
                 updateTurnInfo();
                 break;
             case "game_end":
-                console.log("Game ended with result:", message.result);
                 gameEnded = true;
-                if (message.result === "win") {
+                if (message.result === 'win') {
                     if (message.player === player) {
                         showEndGamePopup("You win!");
                     } else {
                         showEndGamePopup("You lose!");
                     }
-                } else if (message.result === "tie") {
-                    showEndGamePopup("It's a tie!");
-                }
-                break;
-            case "opponent_left":
-                if (gameStarted) {
-                    alert("Your opponent has left the game. You win!");
-                    showEndGamePopup("You win!");
-                    gameEnded = true;
+                } else if (message.result === 'draw') {
+                    showEndGamePopup("It's a draw!");
                 }
                 break;
             default:
@@ -122,13 +111,25 @@ document.addEventListener("DOMContentLoaded", function() {
             socket.send(moveToSend);
 
             if (game.checkWinner(myPlayerId)) {
-                messageDiv.textContent = "You win!";
-                socket.send(JSON.stringify({ type: "game_end", result: "win", player: player, opponent: opponent }));
+                messageDiv.textContent = "";
                 gameEnded = true;
+                socket.send(JSON.stringify({
+                    type: "game_end",
+                    player: player,
+                    opponent: opponent,
+                    result: 'win'
+                }));
+                showEndGamePopup("You win!");
             } else if (turn === 42) {
-                messageDiv.textContent = "It's a tie!";
-                socket.send(JSON.stringify({ type: "game_end", result: "tie", player: player, opponent: opponent }));
+                messageDiv.textContent = "";
                 gameEnded = true;
+                socket.send(JSON.stringify({
+                    type: "game_end",
+                    player: player,
+                    opponent: opponent,
+                    result: 'draw'
+                }));
+                showEndGamePopup("It's a draw!");
             }
 
             currentPlayer = opponent;
@@ -152,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Detect when the player closes or refreshes the page
     window.addEventListener("beforeunload", function(event) {
-        if (gameStarted) {
+        if (!gameEnded) {
             socket.send(JSON.stringify({ type: "leave_queue", username: player }));
         }
     });
@@ -164,24 +165,40 @@ document.addEventListener("DOMContentLoaded", function() {
     function showEndGamePopup(message) {
         const popup = document.createElement("div");
         popup.classList.add("popup");
+        
         const popupMessage = document.createElement("p");
         popupMessage.textContent = message;
+        
         const requeueButton = document.createElement("button");
         requeueButton.textContent = "Requeue";
         requeueButton.addEventListener("click", function() {
             socket.send(JSON.stringify({ type: "requeue", username: player }));
             window.location.href = "index.html";
         });
+        
         const leaveButton = document.createElement("button");
         leaveButton.textContent = "Leave Game";
         leaveButton.addEventListener("click", function() {
             socket.send(JSON.stringify({ type: "leave_queue", username: player }));
             window.location.href = "index.html";
         });
+
+        const closeButton = document.createElement("button");
+        closeButton.textContent = "Close Popup";
+        closeButton.addEventListener("click", function() {
+            popup.style.display = "none";
+        });
+        
         popup.appendChild(popupMessage);
         popup.appendChild(requeueButton);
         popup.appendChild(leaveButton);
+        popup.appendChild(closeButton);
         document.body.appendChild(popup);
+
+        // Redirect to index.html after 10 seconds
+        setTimeout(function() {
+            window.location.href = "index.html";
+        }, 10000);
     }
 
     function createBoard() {
@@ -199,7 +216,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function handleMove(col, color, row) {
-        if (col === undefined){
+        if (col === undefined) {
             col = 0;
         }
         if (row === undefined) {
