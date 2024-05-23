@@ -2,7 +2,7 @@ package matchmaking
 
 import (
 	"context"
-	"matchmaking-server/pkg/database" // Assurez-vous que le chemin d'importation est correct
+	"matchmaking-server/pkg/database"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,7 +20,7 @@ func FindMatchForPlayer(player Player) (*Player, error) {
 
 	err := collection.FindOne(context.Background(), filter).Decode(&matchedPlayer)
 	if err != nil {
-		return nil, err // Aucun joueur correspondant trouvé ou erreur de DB
+		return nil, err
 	}
 	return &matchedPlayer, nil
 }
@@ -30,7 +30,6 @@ func FindMatchWithTimeAdjustment(player Player, startTime time.Time) (*Player, e
 	currentTime := time.Now()
 	elapsed := currentTime.Sub(startTime)
 
-	// Augmenter la tolérance de niveau de compétence toutes les 30 secondes
 	tolerance := int(elapsed.Seconds() / 30)
 
 	filter := bson.M{
@@ -43,7 +42,7 @@ func FindMatchWithTimeAdjustment(player Player, startTime time.Time) (*Player, e
 
 	err := collection.FindOne(context.Background(), filter).Decode(&matchedPlayer)
 	if err != nil {
-		return nil, err // Aucun joueur correspondant trouvé ou erreur de DB
+		return nil, err
 	}
 	return &matchedPlayer, nil
 }

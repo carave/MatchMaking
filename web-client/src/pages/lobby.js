@@ -7,9 +7,9 @@ document.addEventListener("DOMContentLoaded", function() {
     const playVsBotButton = document.getElementById("play-vs-bot");
     const difficultySelect = document.getElementById("difficulty-select");
 
-    let socket; // Déclaration de la variable socket en dehors des fonctions
-    let joinTime; // Variable pour stocker l'heure de début de l'attente
-    let intervalId; // Variable pour stocker l'ID de l'intervalle
+    let socket;
+    let joinTime;
+    let intervalId;
 
     form.addEventListener("submit", function(event) {
         event.preventDefault();
@@ -25,11 +25,11 @@ document.addEventListener("DOMContentLoaded", function() {
         socket.onopen = function(event) {
             socket.send(JSON.stringify({ type: "join_queue", username: username }));
             queueStatus.textContent = "Joining queue...";
-            form.style.display = "none"; // Cacher le formulaire de join queue
-            leaveButton.style.display = "block"; // Afficher le bouton leave queue
-            botOptions.style.display = "none"; // Cacher les options du bot
-            joinTime = Date.now(); // Enregistrer l'heure de début de l'attente
-            startTimer(); // Démarrer le minuteur
+            form.style.display = "none";
+            leaveButton.style.display = "block";
+            botOptions.style.display = "none";
+            joinTime = Date.now();
+            startTimer();
         };
 
         socket.onmessage = function(event) {
@@ -47,25 +47,25 @@ document.addEventListener("DOMContentLoaded", function() {
 
         socket.onerror = function(event) {
             queueStatus.textContent = "Error connecting to server.";
-            stopTimer(); // Arrêter le minuteur
+            stopTimer();
         };
 
         socket.onclose = function(event) {
             queueStatus.textContent = "Disconnected from server.";
-            leaveButton.style.display = "none"; // Cacher le bouton leave queue
-            form.style.display = "block"; // Afficher le formulaire de join queue
-            botOptions.style.display = "block"; // Afficher les options du bot
-            stopTimer(); // Arrêter le minuteur
+            leaveButton.style.display = "none";
+            form.style.display = "block";
+            botOptions.style.display = "block";
+            stopTimer();
         };
 
         leaveButton.addEventListener("click", function() {
             socket.send(JSON.stringify({ type: "leave_queue", username: username }));
             queueStatus.textContent = "You have left the queue.";
-            leaveButton.style.display = "none"; // Cacher le bouton leave queue
-            form.style.display = "block"; // Afficher le formulaire de join queue
-            botOptions.style.display = "block"; // Afficher les options du bot
+            leaveButton.style.display = "none";
+            form.style.display = "block";
+            botOptions.style.display = "block";
             socket.close();
-            stopTimer(); // Arrêter le minuteur
+            stopTimer();
         });
     }
 

@@ -159,7 +159,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     player: player,
                     turn: turn + 1,
                     currentPlayer: opponent,
-                    board: game.board  // Send the current state of the board
+                    board: game.board 
                 });
 
                 socket.send(moveToSend);
@@ -238,7 +238,6 @@ document.addEventListener("DOMContentLoaded", function() {
         popup.appendChild(closeButton);
         document.body.appendChild(popup);
 
-        // Redirect to index.html after 10 seconds
         setTimeout(function() {
             window.location.href = "index.html";
         }, 10000);
