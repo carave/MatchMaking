@@ -8,6 +8,9 @@ document.addEventListener("DOMContentLoaded", function() {
     leaveButton.style.display = "none"; // Initialement caché
     document.body.appendChild(leaveButton);
 
+    const playVsBotButton = document.getElementById("play-vs-bot");
+    const difficultySelect = document.getElementById("difficulty");
+
     let socket; // Déclaration de la variable socket en dehors des fonctions
     let joinTime; // Variable pour stocker l'heure de début de l'attente
     let intervalId; // Variable pour stocker l'ID de l'intervalle
@@ -18,6 +21,11 @@ document.addEventListener("DOMContentLoaded", function() {
         if (username) {
             joinQueue(username);
         }
+    });
+
+    playVsBotButton.addEventListener("click", function() {
+        const difficulty = difficultySelect.value;
+        window.location.href = `game.html?player=a&mode=bot&difficulty=${difficulty}`;
     });
 
     function joinQueue(username) {
@@ -94,3 +102,4 @@ document.addEventListener("DOMContentLoaded", function() {
         return `${minutes}m ${seconds}s`;
     }
 });
+

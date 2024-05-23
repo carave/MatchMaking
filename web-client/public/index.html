@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lobby - Puissance 4</title>
+    <title>Lobby - Connect Four</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,8 +12,17 @@
         <input type="text" id="username" placeholder="Enter your name" required>
         <button type="submit">Join Queue</button>
     </form>
+    <div>
+        <h2>Or play against the computer</h2>
+        <label for="difficulty">Choose difficulty:</label>
+        <select id="difficulty">
+            <option value="easy">Easy</option>
+            <option value="hard">Hard</option>
+        </select>
+        <button id="play-vs-bot">Play vs Bot</button>
+    </div>
     <div id="queue-status"></div>
-    <!-- Le bouton Leave Queue sera ajouté dynamiquement -->
     <script src="../src/pages/lobby.js"></script>
 </body>
 </html>
+
